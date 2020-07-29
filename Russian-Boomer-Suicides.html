@@ -1,0 +1,521 @@
+<!-- ######## This is a comment, visible only in the source editor  ######## -->
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">Suicide Rates Among the Males&nbsp;</span><span style="color: #000000;">of the"Boomer" Generation&nbsp;</span></h1>
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">in</span></h1>
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">The Russian Federation</span></h1>
+<p><strong style="color: #000;">Premise:</strong>&nbsp;A simple examination of suicide rates per 100K of a population and the average GPD per capita.&nbsp;</p>
+<table border="1" style="border-collapse: collapse; width: 100%;">
+<tbody>
+<tr style="height: 21px;"><!--<td style="width: 17.6223%; height: 21px;">Story information goes here.&nbsp; List info regarding high rates of suicide amongst male Boomers in Russia.&nbsp; Note it is higher than other generations on Slide one.<br /><br />Build table with x-year and y-gpd per 100K<br /><br />Show a peak value with some info; show the nadir with some info.</td>-->
+<td style="width: 25%; height: 21px;">
+<p>High rates of suicide among the "boomer" generation occurred in the Russian Federation beginning in the early 1990s.</p>
+<p>This presentation is an exploration of the general trends of suicide rates and GDP growth over two decades to see if correlation or causation can be inferred.</p>
+<p>The chart displays a count of suicides per year, but since since population size can make the presented values relatively large or small it is better to present a representation of suicide per 100K of the population.</p>
+</td>
+<td style="width: 50%; height: 21px;"><center><center><!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<!-- for d3.annotations-->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+<!-- Initialize a select button --><center><span style="color: #e8336d; font-family: Lato; font-style: normal; font-weight: 1000;" span=""> See Suicides by 100K of the Population:&nbsp;&nbsp;<select style="height: 17px;" id="selectButton"></select></span></center><!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<head>
+    <meta charset="utf-8">
+    <link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
+  
+    <style>
+     body{
+        background-color: whitesmoke;
+     }
+  
+     svg {
+        background-color: white;
+        font-family: 'Lato';
+     }
+  
+    .annotation-note-title, text.title {
+      font-weight: bold;
+    }
+  
+    text.title {
+      font-size: 1.2em;
+    }
+  
+    </style>
+  </head>
+
+</center></center><center>
+<script>
+  var selectCnt = 0;
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 100, bottom: 40, left: 100},
+      width = 800 - margin.left - margin.right,
+      height = 550 - margin.top - margin.bottom;
+  
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+  
+  //Read the data
+  d3.csv("http://0.0.0.0:8000/Suicides.csv", 
+
+    // When reading the csv, I must format variables:
+    function(d){
+       return { Year : d3.timeParse("%Y")(d.Year), SuicideNo: d.SuicideNo, Suicides100K : d.Suicides100K }
+    },
+    
+    function(data) {
+       
+      // List of groups (here I have one group per column)
+      //var allGroup = ["SuicideNo", "Suicides100K"]
+      var allGroup = ["Number of Suicides", "Suicides by 100K/Pop"]
+  
+      // add the options to the button
+      d3.select("#selectButton")
+        .selectAll('myOptions')
+        .data(allGroup)
+        .enter()
+        .append('option')
+        .text(function (d) { return d; }) // text showed in the menu
+        .attr("value", function (d) { return d; }) // corresponding value returned by the button
+
+      // Add X axis --> it is a date format
+      var x = d3.scaleTime()
+        .domain(d3.extent(data, function(d) { return d.Year; }))
+        .range([ 0, width ]);
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+      svg.append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "middle")
+        .attr("transform", "translate(" + (width/2) + " ," + (height + margin.top + 25) + ")")
+        .text("Year");    
+            
+      // Add Y axis
+      var y = d3.scaleLinear()
+        .domain( [4000, 35000])
+        .range([ height, 0 ]);
+      svg.append("g")
+        .attr("stroke", "#00008B")
+        .call(d3.axisLeft(y));
+      svg.append("text")
+        .attr("class", "y label")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left + 35)
+        .attr("x", 0 - (height / 2))
+        .attr("stroke", "#00008B")
+        .style("text-anchor", "middle")
+        .text("Total Number of Suicides");
+
+      // Add the line
+      var line = svg
+        .append("path")
+        .datum(data)
+        .attr("fill", "none")
+        .attr("stroke", "#00008B")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+          .x(function(d) { return x(d.Year) })
+          .y(function(d) { return y(d.SuicideNo) })
+          )
+
+      // Add the points
+      var dot = svg
+        .append("g")
+        .selectAll("dot")
+        .data(data)
+        .enter()
+        .append("circle")
+          .attr("cx", function(d) { return x(d.Year) } )
+          .attr("cy", function(d) { return y(d.SuicideNo) } )
+          .attr("r", 5)
+          .attr("fill", "#00008B")
+      // })            
+
+      // Append a vertical line to highlight the separation
+      svg
+        .append("line")
+        .attr("x1", 365 )
+        .attr("y1", 435 )
+        .attr("x2", 465)
+        .attr("y2", 435)
+        .attr("stroke", "#E8336D")
+        .attr("stroke-width", "1");
+
+      svg
+        .append("text")
+        .attr("x", 287)
+        .attr("y", 450)
+        .attr("fill", "#E8336D")
+        .text("Missing Year")
+        //.style("font-size", "15px")
+        .style("font-family", "Lato")
+        .style("font-style", "normal")
+        .style("font-weight", "900");
+
+      svg
+        .append("text")
+        .attr("x", 287)
+        .attr("y", 474)
+        .attr("fill", "#E8336D")
+        .text("No data for 2010")
+        //.style("font-size", "15px")
+        .style("font-family", "Lato")
+        .style("font-style", "normal")
+        .style("font-weight", "300");
+
+      svg
+        .append("text")
+        .attr("x", 287)
+        .attr("y", 494)
+        .attr("fill", "#E8336D")
+        .text("throughout the dataset")
+        //.style("font-size", "15px")
+        .style("font-family", "Lato")
+        .style("font-style", "normal")
+        .style("font-weight", "300");
+
+      // //Missing data annotation
+      // const annotations = [
+      //   {
+      //     //below in makeAnnotations has type set to d3.annotationLabel
+      //     note: {
+      //       label: "No data for 2010 throughout the dataset",
+      //       title: "Missing Year",
+      //       wrap: 190
+      //     },
+      //     //settings for the subject, in this case the circle radius
+      //     connector: {
+      //       end: "arrow" // 'dot' also available
+      //     },
+      //     x: 565,
+      //     y: 445,
+      //     dy: 0,
+      //     dx: -100
+      //   }].map(function(d){ d.color = "#E8336D"; return d})
+
+      //   const makeAnnotations = d3.annotation()
+      //     .type(d3.annotationLabel)
+      //     .annotations(annotations)
+
+      //   d3.select("svg")
+      //     .append("g")
+      //     .attr("class", "annotation-group")
+      //     .call(makeAnnotations)
+      // //END Missing data annotation
+
+        // A function that update the chart
+        async function update(selectedGroup) {
+          if (selectedGroup == "Number of Suicides") {
+            selectedGroup = "SuicideNo"
+          } else {
+            selectedGroup = "Suicides100K"
+          }
+          // Create new data with the selection?
+          var dataFilter = data.map(function(d){return {Year: d.Year, value: d[selectedGroup]} })              
+
+        if (selectedGroup == "Suicides100K" && selectCnt == 0) {          
+          selectCnt+=1 
+          y
+            .domain( [30, 220])
+            .range([ height, 0 ]);
+            svg.append("g")
+              .attr("transform", "translate(" + width + ", 0)")
+              .attr("stroke", "#DC143C")
+              .transition().duration(1000).call(d3.axisRight(y));  
+            svg.append("text")
+              .attr("class", "y2 label")
+              .attr("transform", "rotate(-90)")
+              .attr("y", width + margin.right - 35)
+              .attr("x", 0 - (height / 2))
+              .attr("stroke", "#DC143C")
+              .style("text-anchor", "middle")
+              .text("Suicides per 100K of Population"); 
+              
+        } else if (selectedGroup == "SuicideNo" && selectCnt == 0) {
+          selectCnt+=1   
+          y
+            .domain( [4000, 35000])
+            .range([ height, 0 ]);
+            svg.append("g")
+            .attr("stroke", "#00008B")
+            .transition().duration(1000).call(d3.axisLeft(y));                
+        }
+
+
+        if (selectedGroup == "Suicides100K" && selectCnt > 0) {          
+          y
+            .domain( [30, 220])
+            .range([ height, 0 ]);
+            svg.append("g")
+            .attr("transform", "translate(" + width + ", 0)")
+            .attr("stroke", "#DC143C")
+            .attr("opacity","0.0")
+            .transition().duration(1000).call(d3.axisRight(y));   
+              
+        } else if (selectedGroup == "SuicideNo" && selectCnt > 0) {
+          y
+            .domain( [4000, 35000])
+            .range([ height, 0 ]);
+            svg.append("g")
+            .attr("stroke", "#00008B")
+            .attr("opacity","0.0")
+            .transition().duration(1000).call(d3.axisLeft(y));                
+        }
+
+
+        if (selectedGroup == "Suicides100K") {
+          line
+            .datum(dataFilter)
+            .transition()
+            .duration(1000)
+            .attr("d", d3.line()
+              .x(function(d) { return x(+d.Year) })
+              .y(function(d) { return y(+d.value) })
+            ) 
+            .attr("stroke", "#DC143C")           
+        } else if (selectedGroup == "SuicideNo") {
+          line
+            .datum(dataFilter)
+            .transition()
+            .duration(1000)
+            .attr("d", d3.line()
+              .x(function(d) { return x(+d.Year) })
+              .y(function(d) { return y(+d.value) })
+            )
+            .attr("stroke", "#00008B")
+        }
+
+        if (selectedGroup == "Suicides100K") {
+          dot
+             .data(dataFilter)
+             .transition()
+             .duration(1000)
+              .attr("cx", function(d) { return x(+d.Year) })
+              .attr("cy", function(d) { return y(+d.value) })
+            .attr("fill", "#DC143C")           
+        } else if (selectedGroup == "SuicideNo") {
+          dot
+             .data(dataFilter)
+             .transition()
+             .duration(1000)
+              .attr("cx", function(d) { return x(+d.Year) })
+              .attr("cy", function(d) { return y(+d.value) })
+            .attr("fill", "#00008B")
+        }
+
+        if (selectCnt <= 1) {
+          selectCnt+=1 
+        
+        //Sleep timer
+        function mySleepFunction(delayTime) {
+          return new Promise(resolve => setTimeout(resolve, delayTime));
+        }
+
+        await mySleepFunction(800);
+
+        // //Missing data annotation
+        // const annotations1 = [
+        //   {
+        //     //below in makeAnnotations has type set to d3.annotationLabel
+        //     //you can add this type value below to override that default
+        //     //type: d3.annotationCalloutCircle,
+        //     note: {
+        //       label: "Peak reached in both count and per 100K of population in 1994",
+        //       title: "High Rate",
+        //       wrap: 190
+        //     },
+        //     //settings for the subject, in this case the circle radius
+        //     connector: {
+        //       end: "arrow" // 'dot' also available
+        //     },
+        //     x: 235,
+        //     y: 30,
+        //     dy: 0,
+        //     dx: 250
+        //   }].map(function(d){ d.color = "#E8336D"; return d})
+
+        //   const makeAnnotations1 = d3.annotation()
+        //     .type(d3.annotationLabel)
+        //     .annotations(annotations1)
+
+        //   d3.select("svg")
+        //     .append("g")
+        //     .attr("class", "annotation-group")
+        //     .call(makeAnnotations1).transition()
+        // //END Missing data annotation    
+
+        // Append a vertical line to highlight the separation
+        svg
+          .append("line")
+          .attr("x1", 135 )
+          .attr("y1", 20 )
+          .attr("x2", 325)
+          .attr("y2", 20)
+          .attr("stroke", "#E8336D")
+          .attr("stroke-width", "1");        
+
+        svg
+          .append("text")
+          .attr("x", 292)
+          .attr("y", 35)
+          .attr("fill", "#E8336D")
+          .text("High Rate")
+          //.style("font-size", "15px")
+          .style("font-family", "Lato")
+          .style("font-style", "normal")
+          .style("font-weight", "900");
+
+        svg
+            .append("text")
+            .attr("x", 292)
+            .attr("y", 59)
+            .attr("fill", "#E8336D")
+            .text("Peak reached in both count")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+
+        svg
+            .append("text")
+            .attr("x", 292)
+            .attr("y", 79)
+            .attr("fill", "#E8336D")
+            .text("and per 100K of population")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+          
+        svg
+            .append("text")
+            .attr("x", 292)
+            .attr("y", 99)
+            .attr("fill", "#E8336D")
+            .text("in 1994")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+                
+
+      await mySleepFunction(500);
+
+        // //Missing data annotation
+        // const annotations2 = [
+        //   {
+        //     //below in makeAnnotations has type set to d3.annotationLabel
+        //     //you can add this type value below to override that default
+        //     //type: d3.annotationCalloutCircle,
+        //     note: {
+        //       label: "A consistent decline in the rate of suicide over subsequent decades",
+        //       title: "Steady Reduction",
+        //       wrap: 190
+        //     },
+        //     //settings for the subject, in this case the circle radius
+        //     connector: {
+        //       end: "arrow" // 'dot' also available
+        //     },
+        //     x: 500,
+        //     y: 340,
+        //     dy: -100,
+        //     dx: 75
+        //   }].map(function(d){ d.color = "#E8336D"; return d})
+
+        //   const makeAnnotations2 = d3.annotation()
+        //     .type(d3.annotationLabel)
+        //     .annotations(annotations2)
+
+        //   d3.select("svg")
+        //     .append("g")
+        //     .attr("class", "annotation-group")
+        //     .call(makeAnnotations2).transition()
+        // //END Missing data annotation        
+      //}
+
+        svg
+            .append("line")
+            .attr("x1", 400 )
+            .attr("y1", 330 )
+            .attr("x2", 475)
+            .attr("y2", 230)
+            .attr("stroke", "#E8336D")
+            .attr("stroke-width", "1");        
+
+        svg
+            .append("text")
+            .attr("x", 387)
+            .attr("y", 160)
+            .attr("fill", "#E8336D")
+            .text("Steady Reduction")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "900");
+
+        svg
+            .append("text")
+            .attr("x", 387)
+            .attr("y", 184)
+            .attr("fill", "#E8336D")
+            .text("A consistent decline in the")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+
+        svg
+            .append("text")
+            .attr("x", 387)
+            .attr("y", 204)
+            .attr("fill", "#E8336D")
+            .text("rate of suicide over")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+          
+        svg
+            .append("text")
+            .attr("x", 387)
+            .attr("y", 224)
+            .attr("fill", "#E8336D")
+            .text("subsequent decades")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");        
+        }   
+          
+      }
+          
+      // When the button is changed, run the updateChart function
+      d3.select("#selectButton").on("change", function(d) {
+          // recover the option that has been chosen
+          var selectedOption = d3.select(this).property("value")
+          // run the updateChart function with this selected option
+          update(selectedOption)
+      })
+  
+  })
+  
+  </script>
+</center></td>
+<td style="width: 25%; height: 21px;">
+<p>After viewing suicides by a rate relative to the population of the Federation, it is clear the initial trend displayed is valid with a peak rate in 1994 followed by an almost steady declining rate over the following years.</p>
+<p>What could account for the rapid rise in the early 1990s and the subsequent steady decline?</p>
+<p></p>
+<p style="text-align: center;"><span style="color: #99cc00;"><a href="http://0.0.0.0:8000/Russian-Boomer-Suicides-2.html" title="Next Slide" style="color: #e8336d;"><strong>Next Slide--&gt;</strong></a></span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span style="color: #000000;"></span></p>
+<h1 style="color: #e8336d; text-align: center; font-family: Lato; font-style: normal; font-weight: 1000;">Slide 1/3&nbsp;</h1>
+<h4></h4>

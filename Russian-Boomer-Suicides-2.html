@@ -1,0 +1,435 @@
+<!-- ######## This is a comment, visible only in the source editor  ######## -->
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">Suicide Rates Among the Males&nbsp;</span><span style="color: #000000;">of the"Boomer" Generation&nbsp;</span></h1>
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">in</span></h1>
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">The Russian Federation</span></h1>
+<p><strong style="color: #000;">Premise:</strong>&nbsp;A simple examination of suicide rates per 100K of a population and the average GPD per capita.&nbsp;</p>
+<table border="1" style="border-collapse: collapse; width: 100%;">
+<tbody>
+<tr style="height: 21px;"><!--<td style="width: 17.6223%; height: 21px;">Story information goes here.&nbsp; List info regarding high rates of suicide amongst male Boomers in Russia.&nbsp; Note it is higher than other generations on Slide one.<br /><br />Build table with x-year and y-gpd per 100K<br /><br />Show a peak value with some info; show the nadir with some info.</td>-->
+<td style="width: 25%; height: 21px;">
+<p>The gross domestic product per capita, as illustrated in this slide, shows an already low output decreasing even farther in the early 1990s. &nbsp;Though it wasn't the nadir, could it have impacted those of the "boomer" generation with greater impact than younger people with less responsibility and older people already heavily assisted?</p>
+<p>In the early aughts, an impressively rapid increase in GPD takes place as suicide rates fall even farther.</p>
+<p></p>
+</td>
+<td style="width: 50%; height: 21px;"><center><center><!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<!-- for d3.annotations-->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+<!-- Initialize a select button --><center><span style="color: #e8336d; font-family: Lato; font-style: bold; font-weight: 1000;" span="">GDP per Capita by Year</span></center><!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<head>
+  <meta charset="utf-8">
+  <link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
+
+  <style>
+   body{
+      background-color: whitesmoke;
+   }
+
+   svg {
+      background-color: white;
+      font-family: 'Lato';
+   }
+
+  .annotation-note-title, text.title {
+    font-weight: bold;
+  }
+
+  text.title {
+    font-size: 1.2em;
+  }
+
+  </style>
+</head>
+
+<!-- Circle are black when hovered-->
+<style>
+  .myCircle:hover {
+    fill: #E8336D;
+  }
+  </style>
+
+</center></center><center><center><!-- Circle are black when hovered--></center></center><center>
+<script>
+  var selectCnt = 0;
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 100, bottom: 40, left: 100},
+      width = 800 - margin.left - margin.right,
+      height = 550 - margin.top - margin.bottom;
+  
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+  
+    //Read the data
+    d3.csv("http://0.0.0.0:8000/Suicides.csv",
+      // When reading the csv, I must format variables:
+      function(d){
+        return { Year : d3.timeParse("%Y")(d.Year), GdpPerCapita : d.GdpPerCapita, SuicideNo : d.SuicideNo, Suicides100K : d.Suicides100K, GdpForYear : d.GdpForYear }
+      },
+      // Now I can use this dataset:
+      async function(data) {
+        // Add X axis --> it is a date format
+        var x = d3.scaleTime()
+          .domain(d3.extent(data, function(d) { return d.Year; }))
+          .range([ 0, width ]);
+        svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x));
+        svg.append("text")
+          .attr("class", "x label")
+          .attr("text-anchor", "middle")
+          .attr("transform", "translate(" + (width/2) + " ," + (height + margin.top + 25) + ")")
+          .text("Year");            
+        
+        // Add Y axis
+        var y = d3.scaleLinear()
+          .domain([1350, 18000])
+          .range([ height, 0 ]);
+        svg.append("g")
+          .attr("stroke", "#3CB371")
+          .call(d3.axisLeft(y));
+        svg.append("text")
+          .attr("class", "y label")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0 - margin.left + 35)
+          .attr("x", 0 - (height / 2))
+          .attr("stroke", "#3CB371")
+          .style("text-anchor", "middle")
+          .text("GDP per Capita");
+
+        // Add the line
+        svg.append("path")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke", "#3CB371")
+          .attr("stroke-width", 1.5)
+          .attr("d", d3.line()
+            .x(function(d) { return x(d.Year) })
+            .y(function(d) { return y(d.GdpPerCapita) })
+            )
+
+        // create a tooltip
+        var Tooltip = d3.select("#my_dataviz")
+          .append("div")
+          .style("opacity", 0)
+          .attr("class", "tooltip")
+          .style("background-color", "white")
+          .style("border", "solid")
+          .style("border-width", "2px")
+          .style("border-radius", "5px")
+          .style("padding", "5px")
+          .style("position", "absolute")
+          //.style("visibility", "hidden")
+
+          // Three function that change the tooltip when user hover / move / leave a cell
+          var mouseover = function(d) {
+            Tooltip
+              .style("opacity", 1)
+          }
+          var mousemove = function(d) {
+            var html = "GDP per Capita: " + d.GdpPerCapita + "<br/>Number of Suicides per 100K: " + d.Suicides100K + "<br/>Number of Suicides: " + d.SuicideNo + "<br/>Total GDP per Year: " + d.GdpForYear
+            Tooltip
+              //.html("Number of Suicides per 100K: " + d.Suicides100K + "Number of Suicides: " + d.SuicideNo)
+              .html(html)
+              .style("top", (event.pageY)-105+"px")
+              .style("left",(event.pageX)-60+"px")
+          }
+          var mouseleave = function(d) {
+            Tooltip
+              .style("opacity", 0)
+          }            
+
+        // Add the points
+        svg
+          .append("g")
+          .selectAll("datapoints")
+          .data(data)
+          .enter()
+          .append("circle")
+            .attr("class", "myCircle")
+            .attr("cx", function(d) { return x(d.Year) } )
+            .attr("cy", function(d) { return y(d.GdpPerCapita) } )
+            .attr("r", 8)
+            .attr("stroke", "#3CB371")
+            .attr("stroke-width", 3)
+            .attr("fill", "white")
+            .on("mouseover", mouseover)
+            .on("mousemove", mousemove)
+            .on("mouseleave", mouseleave)
+        //})
+
+        //Sleep timer
+        function mySleepFunction(delayTime) {
+          return new Promise(resolve => setTimeout(resolve, delayTime));
+        }
+
+        await mySleepFunction(800);
+
+        // //Missing data annotation
+        // const annotations2 = [
+        //   {
+        //     //below in makeAnnotations has type set to d3.annotationLabel
+        //     //you can add this type value below to override that default
+        //     //type: d3.annotationCalloutCircle,
+        //     note: {
+        //       label: "An already low GDP decreasing as suicide rates rise",
+        //       title: "Low GDP per Capita",
+        //       wrap: 190
+        //     },
+        //     //settings for the subject, in this case the circle radius
+        //     connector: {
+        //       end: "arrow" // 'dot' also available
+        //     },
+        //     x: 250,
+        //     y: 440,
+        //     dy: -100,
+        //     dx: -50
+        //   }].map(function(d){ d.color = "#E8336D"; return d})
+
+        //   const makeAnnotations2 = d3.annotation()
+        //     .type(d3.annotationLabel)
+        //     .annotations(annotations2)
+
+        //   d3.select("svg")
+        //     .append("g")
+        //     .attr("class", "annotation-group")
+        //     .call(makeAnnotations2).transition()
+        // //END Missing data annotation   
+
+        
+        svg
+            .append("line")
+            .attr("x1", 150 )
+            .attr("y1", 430 )
+            .attr("x2", 100)
+            .attr("y2", 331)
+            .attr("stroke", "#E8336D")
+            .attr("stroke-width", "1");        
+
+        svg
+            .append("text")
+            .attr("x", 17)
+            .attr("y", 252)
+            .attr("fill", "#E8336D")
+            .text("Low GDP per Capita")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "900");
+
+        svg
+            .append("text")
+            .attr("x", 17)
+            .attr("y", 276)
+            .attr("fill", "#E8336D")
+            .text("An already low GDP")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+
+        svg
+            .append("text")
+            .attr("x", 17)
+            .attr("y", 296)
+            .attr("fill", "#E8336D")
+            .text("decreasing as suicide")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+          
+        svg
+            .append("text")
+            .attr("x", 17)
+            .attr("y", 316)
+            .attr("fill", "#E8336D")
+            .text("rates rise")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");          
+        
+        await mySleepFunction(800);       
+        
+        // //Missing data annotation
+        // const annotations1 = [
+        //   {
+        //     //below in makeAnnotations has type set to d3.annotationLabel
+        //     //you can add this type value below to override that default
+        //     //type: d3.annotationCalloutCircle,
+        //     note: {
+        //       label: "A steady increase in GDP as suicide rates subside",
+        //       title: "Individual GDP Rise",
+        //       wrap: 190
+        //     },
+        //     //settings for the subject, in this case the circle radius
+        //     connector: {
+        //       end: "arrow" // 'dot' also available
+        //     },
+        //     x: 425,
+        //     y: 375,
+        //     dy: -200,
+        //     dx: -125
+        //   }].map(function(d){ d.color = "#E8336D"; return d})
+
+        //   const makeAnnotations1 = d3.annotation()
+        //     .type(d3.annotationLabel)
+        //     .annotations(annotations1)
+
+        //   d3.select("svg")
+        //     .append("g")
+        //     .attr("class", "annotation-group")
+        //     .call(makeAnnotations1).transition()
+        // //END Missing data annotation    
+        
+        svg
+            .append("line")
+            .attr("x1", 325 )
+            .attr("y1", 365 )
+            .attr("x2", 200)
+            .attr("y2", 165)
+            .attr("stroke", "#E8336D")
+            .attr("stroke-width", "1");        
+
+        svg
+            .append("text")
+            .attr("x", 117)
+            .attr("y", 87)
+            .attr("fill", "#E8336D")
+            .text("Individual GDP Rise")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "900");
+
+        svg
+            .append("text")
+            .attr("x", 117)
+            .attr("y", 111)
+            .attr("fill", "#E8336D")
+            .text("A steady increase in")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+
+        svg
+            .append("text")
+            .attr("x", 117)
+            .attr("y", 131)
+            .attr("fill", "#E8336D")
+            .text("GDP as suicide rates")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+          
+        svg
+            .append("text")
+            .attr("x", 117)
+            .attr("y", 151)
+            .attr("fill", "#E8336D")
+            .text("subside")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");          
+
+        
+        await mySleepFunction(800);           
+
+        // //Missing data annotation
+        // const annotations = [
+        //   {
+        //     //below in makeAnnotations has type set to d3.annotationLabel
+        //     //you can add this type value below to override that default
+        //     //type: d3.annotationCalloutCircle,
+        //     note: {
+        //       label: "Details for each year represented",
+        //       title: "Mouse Over Circles",
+        //       wrap: 190
+        //     },
+        //     //settings for the subject, in this case the circle radius
+        //     connector: {
+        //       end: "arrow" // 'dot' also available
+        //     },
+        //     x: 515,
+        //     y: 345,
+        //     dy: 45,
+        //     dx: 195
+        //   }].map(function(d){ d.color = "#E8336D"; return d})
+
+        //   const makeAnnotations = d3.annotation()
+        //     .type(d3.annotationLabel)
+        //     .annotations(annotations)
+
+        //   d3.select("svg")
+        //     .append("g")
+        //     .attr("class", "annotation-group")
+        //     .call(makeAnnotations);
+        // //END Missing data annotation
+
+        svg
+            .append("line")
+            .attr("x1", 415 )
+            .attr("y1", 330 )
+            .attr("x2", 610)
+            .attr("y2", 380)
+            .attr("stroke", "#E8336D")
+            .attr("stroke-width", "1"); 
+
+        svg
+            .append("text")
+            .attr("x", 530)
+            .attr("y", 397)
+            .attr("fill", "#E8336D")
+            .text("Mouse Over Circles")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "900");
+
+        svg
+            .append("text")
+            .attr("x", 530)
+            .attr("y", 421)
+            .attr("fill", "#E8336D")
+            .text("Details for each year")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");
+
+        svg
+            .append("text")
+            .attr("x", 530)
+            .attr("y", 441)
+            .attr("fill", "#E8336D")
+            .text("represented")
+            //.style("font-size", "15px")
+            .style("font-family", "Lato")
+            .style("font-style", "normal")
+            .style("font-weight", "300");        
+
+      })
+    </script>
+</center></td>
+<td style="width: 25%; height: 21px;">
+<p><span style="font-size: 14px;">The trend of&nbsp;</span>increasing<span style="font-size: 14px;">&nbsp;GPD per capita is almost the exact opposite of&nbsp;</span>the<span style="font-size: 14px;">&nbsp;</span>crease<span style="font-size: 14px;">&nbsp;in suicide rates when comparing the charts. &nbsp;</span></p>
+<p><span style="font-size: 14px;">Is it&nbsp;</span>possible the increased fortunes of the general populace led to less dispare among this generation?&nbsp;</p>
+<p style="text-align: center;"><span style="color: #99cc00;"><a href="http://0.0.0.0:8000/Russian-Boomer-Suicides-3.html" title="Next Slide" style="color: #e8336d;"><strong>Next Slide--&gt;</strong></a></span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span style="color: #000000;"></span></p>
+<h1 style="color: #e8336d; text-align: center; font-family: Lato; font-style: normal; font-weight: 1000;">Slide 2/3&nbsp;</h1>
+<h4></h4>

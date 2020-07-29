@@ -1,0 +1,156 @@
+<!-- ######## This is a comment, visible only in the source editor  ######## -->
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">Suicide Rates Among the Males&nbsp;</span><span style="color: #000000;">of the"Boomer" Generation&nbsp;</span></h1>
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">in</span></h1>
+<h1 style="color: #4485b8; text-align: center;"><span style="color: #000000;">The Russian Federation</span></h1>
+<p><strong style="color: #000;">Premise:</strong>&nbsp;A simple examination of suicide rates per 100K of a population and the average GPD per capita.&nbsp;</p>
+<table border="1" style="border-collapse: collapse; width: 100%;">
+<tbody>
+<tr style="height: 21px;"><!--<td style="width: 17.6223%; height: 21px;">Story information goes here.&nbsp; List info regarding high rates of suicide amongst male Boomers in Russia.&nbsp; Note it is higher than other generations on Slide one.<br /><br />Build table with x-year and y-gpd per 100K<br /><br />Show a peak value with some info; show the nadir with some info.</td>-->
+<td style="width: 25%; height: 21px;">
+<p>A single generation within a single country isn't enough data on its own to determine correlation and causation.</p>
+<p>Investigating the same generation of countries with differing economic fortunes in the same window of years would be useful for additional insight. &nbsp;Perhaps checking for multiple generations per country would offer even more information.</p>
+<p></p>
+</td>
+<td style="width: 50%; height: 21px;"><center><center><!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+<!-- for d3.annotations-->
+<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+<!-- Initialize a select button --> <!-- <center><span style="color: #E8336D; font-family: Lato; font-style: bold; font-weight: 1000;"</span>Suicides per 100K of Population:&nbsp;&nbsp; <button style="height:18px;" onclick="update('Boomers')">Boomers</button>&nbsp; <button style="height:18px;" onclick="update('All Generations')">All Generations</button></center> --><center><span style="color: #e8336d; font-family: Lato; font-style: bold; font-weight: 1000;" span="">Suicides per 100K of Population:&nbsp;&nbsp; <input type="radio" onclick="update(value)" name="onclick" value="Boomers" checked="checked" />Boomers&nbsp; <input type="radio" onclick="update(value)" name="onclick" value="All Generations" />All Generations&nbsp; </span></center><!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<head>
+  <meta charset="utf-8">
+  <link href='https://fonts.googleapis.com/css?family=Lato:300,900' rel='stylesheet' type='text/css'>
+
+  <style>
+   body{
+      background-color: whitesmoke;
+   }
+
+   svg {
+      background-color: white;
+      font-family: 'Lato';
+   }
+
+  .annotation-note-title, text.title {
+    font-weight: bold;
+  }
+
+  text.title {
+    font-size: 1.2em;
+  }
+
+  </style>
+</head>
+
+</center></center><center>
+<script>
+  // set the dimensions and margins of the graph
+  var margin = {top: 10, right: 100, bottom: 60, left: 100},
+      width = 800 - margin.left - margin.right,
+      height = 550 - margin.top - margin.bottom;
+  
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+  
+  // Initialize the X axis
+  var x = d3.scaleBand()
+    .range([ 0, width ])
+    .padding(0.2)
+
+  var xAxis = svg.append("g")
+    .attr("transform", "translate(0," + height + ")")
+  
+  // Initialize the Y axis
+  var y = d3.scaleLinear()
+    .range([ height, 0]);
+    svg.append("text")
+      .attr("class", "y label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left + 35)
+      .attr("x", 0 - (height / 2))
+      .attr("stroke", "#DC143C")
+      .style("text-anchor", "middle")
+      .text("Suicides per 100K of Population");
+
+  var yAxis = svg.append("g")
+    .attr("class", "myYaxis")
+    .attr("stroke", "#DC143C")
+  
+  
+  // A function that create / update the plot for a given variable:
+  function update(selectedVar) {
+    var url;
+    // Parse the Data
+    if (selectedVar == "Boomers") {
+      url = "http://0.0.0.0:8000/Suicides_Top10_Boomers.csv"
+    } else if (selectedVar == "All Generations") {
+      url = "http://0.0.0.0:8000/Suicides_Top10_All_Gens.csv"
+    }
+      d3.csv(url,
+      
+      function(d){
+        return { Country : d.Country, MaxSuicides100K : d.MaxSuicides100K }
+      },  
+      
+      function(data) {
+      
+      // X axis
+      x
+        .domain(data.map(function(d) { return d.Country; }))
+
+      xAxis
+        .transition().duration(1000).call(d3.axisBottom(x))
+        .selectAll("text")
+        .attr("transform", "translate(-10,0)rotate(-45)")
+        .style("text-anchor", "end");
+
+
+      // Add Y axis
+      y
+        .domain([0, d3.max(data, function(d) { return +d.MaxSuicides100K }) ]);
+      
+      yAxis
+        .transition().duration(1000).call(d3.axisLeft(y));
+  
+      // variable u: map data to existing bars
+      var u = svg.selectAll("rect")
+        .data(data)
+  
+      // update bars
+      u
+        .enter()
+        .append("rect")
+        .merge(u)
+        .transition()
+        .duration(1000)
+          .attr("x", function(d) { return x(d.Country); })
+          .attr("y", function(d) { return y(d.MaxSuicides100K); })
+          .attr("width", x.bandwidth())
+          .attr("height", function(d) { return height - y(d.MaxSuicides100K); })
+          .attr("fill", "#DC143C")
+    })
+  
+  }
+  
+  // Initialize plot
+  update('Boomers')
+  
+  </script>
+</center></td>
+<td style="width: 25%; height: 21px;">
+<p>This concludes the presentation. &nbsp;Thank you for viewing.</p>
+<p style="text-align: center;"><span style="color: #99cc00;"><a href="http://0.0.0.0:8000/Russian-Boomer-Suicides.html" title="Next Slide" style="color: #e8336d;"><strong>Restart--&gt;</strong></a></span></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span style="color: #000000;"></span></p>
+<h1 style="color: #e8336d; text-align: center; font-family: Lato; font-style: normal; font-weight: 1000;">Slide 3/3&nbsp;</h1>
+<h4></h4>
